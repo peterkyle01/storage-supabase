@@ -1,1 +1,2 @@
-export { BeforeDashboardServer } from '../components/BeforeDashboardServer.js'
+// Server-side exports
+export {}

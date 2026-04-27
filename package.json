@@ -1,7 +1,11 @@
 {
   "name": "storage-supabase",
   "version": "1.0.0",
-  "description": "A blank template to get started with Payload 3.0",
+  "description": "Supabase Storage adapter for Payload CMS",
+  "author": {
+    "name": "Peter Mwangi",
+    "email": "kylepeterkoine4@gmail.com"
+  },
   "license": "MIT",
   "type": "module",
   "exports": {
@@ -27,56 +31,25 @@
     "dist"
   ],
   "scripts": {
-    "build": "pnpm copyfiles && pnpm build:types && pnpm build:swc",
-    "build:swc": "swc ./src -d ./dist --config-file .swcrc --strip-leading-paths",
-    "build:types": "tsc --outDir dist --rootDir ./src",
+    "build": "pnpm build:types && pnpm build:swc",
+    "build:swc": "swc ./src -d ./dist --config-file .swcrc --strip-leading-paths --ignore \"src/**/*.spec.ts\"",
+    "build:types": "tsc --project tsconfig.build.json --outDir dist --rootDir ./src",
     "clean": "rimraf {dist,*.tsbuildinfo}",
-    "copyfiles": "copyfiles -u 1 \"src/**/*.{html,css,scss,ttf,woff,woff2,eot,svg,jpg,png,json}\" dist/",
-    "dev": "next dev dev --turbo",
-    "dev:generate-importmap": "pnpm dev:payload generate:importmap",
-    "dev:generate-types": "pnpm dev:payload generate:types",
-    "dev:payload": "cross-env PAYLOAD_CONFIG_PATH=./dev/payload.config.ts payload",
-    "generate:importmap": "pnpm dev:generate-importmap",
-    "generate:types": "pnpm dev:generate-types",
-    "lint": "eslint",
-    "lint:fix": "eslint ./src --fix",
-    "test": "pnpm test:int && pnpm test:e2e",
-    "test:e2e": "playwright test",
-    "test:int": "vitest"
+    "lint": "eslint ./src && prettier --check \"src/**/*.{ts,json,md}\"",
+    "lint:fix": "eslint ./src --fix && prettier --write \"src/**/*.{ts,json,md}\"",
+    "format": "prettier --write \"src/**/*.{ts,json,md}\"",
+    "test": "vitest run"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3.2.0",
-    "@payloadcms/db-mongodb": "3.84.0",
-    "@payloadcms/db-postgres": "3.84.0",
-    "@payloadcms/db-sqlite": "3.84.0",
     "@payloadcms/eslint-config": "3.28.0",
-    "@payloadcms/next": "3.84.0",
-    "@payloadcms/richtext-lexical": "3.84.0",
-    "@payloadcms/ui": "3.84.0",
-    "@playwright/test": "1.58.2",
-    "@swc-node/register": "1.10.9",
     "@swc/cli": "0.6.0",
+    "@swc/core": "^1.15.32",
     "@types/node": "22.19.9",
-    "@types/react": "19.2.14",
-    "@types/react-dom": "19.2.3",
-    "copyfiles": "2.4.1",
-    "cross-env": "^7.0.3",
     "eslint": "^9.23.0",
-    "eslint-config-next": "16.2.3",
-    "graphql": "^16.8.1",
-    "mongodb-memory-server": "10.1.4",
-    "next": "16.2.3",
-    "open": "^10.1.0",
     "payload": "3.84.0",
     "prettier": "^3.4.2",
-    "qs-esm": "8.0.1",
-    "react": "19.2.4",
-    "react-dom": "19.2.4",
     "rimraf": "3.0.2",
-    "sharp": "0.34.2",
-    "sort-package-json": "^2.10.0",
     "typescript": "5.7.3",
-    "vite-tsconfig-paths": "6.0.5",
     "vitest": "4.0.18"
   },
   "peerDependencies": {
@@ -107,13 +80,7 @@
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts"
   },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "sharp",
-      "esbuild",
-      "unrs-resolver"
-    ]
-  },
-  "registry": "https://registry.npmjs.org/",
-  "dependencies": {}
+  "dependencies": {
+    "@payloadcms/plugin-cloud-storage": "^3.84.0"
+  }
 }

@@ -1,12 +1,8 @@
 {
   "compilerOptions": {
     "baseUrl": ".",
-    "lib": [
-      "DOM",
-      "DOM.Iterable",
-      "ES2022"
-    ],
-    "rootDir": "./",
+    "lib": ["DOM", "DOM.Iterable", "ES2022"],
+    "rootDir": "./src",
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -19,17 +15,9 @@
     "incremental": true,
     "emitDeclarationOnly": true,
     "target": "ES2022",
-    "composite": true,
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ]
+    "declaration": true,
+    "declarationMap": true,
   },
-  "include": [
-    "./src/**/*.ts",
-    "./src/**/*.tsx",
-    "./dev/next-env.d.ts",
-    ".next/dev/types/**/*.ts"
-  ]
+  "include": ["./src/**/*.ts"],
+  "exclude": ["node_modules", "dist"],
 }

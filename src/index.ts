@@ -1,113 +1,99 @@
-import type { CollectionSlug, Config } from 'payload'
+import type {
+  PluginOptions as CloudStoragePluginOptions,
+  CollectionOptions,
+} from '@payloadcms/plugin-cloud-storage/types'
+import type { Config, Plugin, UploadCollectionSlug } from 'payload'
 
-import { customEndpointHandler } from './endpoints/customEndpointHandler.js'
+import { cloudStoragePlugin } from '@payloadcms/plugin-cloud-storage'
 
-export type StorageSupabaseConfig = {
+import { supabaseAdapter } from './adapter.js'
+
+export interface SupabaseStorageOptions {
+  /** Supabase bucket name */
+  bucket: string
+  /** Map of collection slugs to adapter options */
+  collections: Partial<Record<UploadCollectionSlug, Omit<CollectionOptions, 'adapter'> | true>>
   /**
-   * List of collections to add a custom field
+   * Redirect to Supabase URL instead of proxying through server
+   * @default true
    */
-  collections?: Partial<Record<CollectionSlug, true>>
-  disabled?: boolean
+  disableProxy?: boolean
+  /** @default true */
+  enabled?: boolean
+  /** Supabase image optimization parameters */
+  imageOptimization?: {
+    format?: 'avif' | 'origin' | 'webp'
+    quality?: number
+    resize?: 'contain' | 'cover' | 'fill'
+  }
+  /**
+   * Set to false for private buckets to generate signed URLs
+   * @default true
+   */
+  public?: boolean
+  /** Supabase service_role key */
+  supabaseKey: string
+  /** Supabase project URL */
+  supabaseUrl: string
 }
 
 export const storageSupabase =
-  (pluginOptions: StorageSupabaseConfig) =>
-  (config: Config): Config => {
-    if (!config.collections) {
-      config.collections = []
+  (options: SupabaseStorageOptions): Plugin =>
+  (incomingConfig: Config): Config => {
+    const {
+      bucket,
+      disableProxy = true,
+      enabled = true,
+      imageOptimization,
+      public: isPublic = true,
+      supabaseKey,
+      supabaseUrl,
+    } = options
+
+    if (enabled === false) {
+      return incomingConfig
     }
 
-    config.collections.push({
-      slug: 'plugin-collection',
-      fields: [
-        {
-          name: 'id',
-          type: 'text',
-        },
-      ],
+    const adapter = supabaseAdapter({
+      bucket,
+      disableProxy,
+      imageOptimization,
+      public: isPublic,
+      supabaseKey,
+      supabaseUrl,
     })
 
-    if (pluginOptions.collections) {
-      for (const collectionSlug in pluginOptions.collections) {
-        const collection = config.collections.find(
-          (collection) => collection.slug === collectionSlug,
-        )
+    const collectionsWithAdapter: CloudStoragePluginOptions['collections'] = Object.entries(
+      options.collections,
+    ).reduce(
+      (acc, [slug, collOptions]) => ({
+        ...acc,
+        [slug]: {
+          ...(collOptions === true ? {} : collOptions),
+          adapter,
+        },
+      }),
+      {} as Record<string, CollectionOptions>,
+    )
 
-        if (collection) {
-          collection.fields.push({
-            name: 'addedByPlugin',
-            type: 'text',
-            admin: {
-              position: 'sidebar',
-            },
-          })
+    const config = {
+      ...incomingConfig,
+      collections: (incomingConfig.collections || []).map((collection) => {
+        if (!collectionsWithAdapter[collection.slug]) {
+          return collection
         }
-      }
-    }
 
-    /**
-     * If the plugin is disabled, we still want to keep added collections/fields so the database schema is consistent which is important for migrations.
-     * If your plugin heavily modifies the database schema, you may want to remove this property.
-     */
-    if (pluginOptions.disabled) {
-      return config
-    }
-
-    if (!config.endpoints) {
-      config.endpoints = []
-    }
-
-    if (!config.admin) {
-      config.admin = {}
-    }
-
-    if (!config.admin.components) {
-      config.admin.components = {}
-    }
-
-    if (!config.admin.components.beforeDashboard) {
-      config.admin.components.beforeDashboard = []
-    }
-
-    config.admin.components.beforeDashboard.push(
-      `storage-supabase/client#BeforeDashboardClient`,
-    )
-    config.admin.components.beforeDashboard.push(
-      `storage-supabase/rsc#BeforeDashboardServer`,
-    )
-
-    config.endpoints.push({
-      handler: customEndpointHandler,
-      method: 'get',
-      path: '/my-plugin-endpoint',
-    })
-
-    const incomingOnInit = config.onInit
-
-    config.onInit = async (payload) => {
-      // Ensure we are executing any existing onInit functions before running our own.
-      if (incomingOnInit) {
-        await incomingOnInit(payload)
-      }
-
-      const { totalDocs } = await payload.count({
-        collection: 'plugin-collection',
-        where: {
-          id: {
-            equals: 'seeded-by-plugin',
+        return {
+          ...collection,
+          upload: {
+            ...(typeof collection.upload === 'object' ? collection.upload : {}),
+            disableLocalStorage: true,
           },
-        },
-      })
-
-      if (totalDocs === 0) {
-        await payload.create({
-          collection: 'plugin-collection',
-          data: {
-            id: 'seeded-by-plugin',
-          },
-        })
-      }
+        }
+      }),
     }
 
-    return config
+    return cloudStoragePlugin({
+      collections: collectionsWithAdapter,
+    })(config)
   }
