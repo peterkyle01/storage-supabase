@@ -6,6 +6,14 @@
     "name": "Peter Mwangi",
     "email": "kylepeterkoine4@gmail.com"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/peterkyle01/storage-supabase.git"
+  },
+  "bugs": {
+    "url": "https://github.com/peterkyle01/storage-supabase/issues"
+  },
+  "homepage": "https://github.com/peterkyle01/storage-supabase#readme",
   "license": "MIT",
   "type": "module",
   "exports": {
@@ -59,6 +67,7 @@
     "node": "^18.20.2 || >=20.9.0"
   },
   "publishConfig": {
+    "access": "public",
     "exports": {
       ".": {
         "import": "./dist/index.js",
