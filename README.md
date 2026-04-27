@@ -7,7 +7,7 @@ This adapter integrates Supabase Storage with Payload's upload system. It is des
 ## Installation
 
 ```sh
-pnpm add storage-supabase
+npm install storage-supabase
 ```
 
 ## Usage
