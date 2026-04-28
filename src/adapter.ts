@@ -58,7 +58,7 @@ export const supabaseAdapter = ({
   }
 
   // Determine which header format to use based on key type
-  const getAuthHeaders = () => {
+  const getAuthHeaders = (): Record<string, string> => {
     if (supabaseKey?.startsWith('sb_secret_')) {
       // New secret key format uses apikey header
       return { apikey: supabaseKey }
@@ -75,7 +75,7 @@ export const supabaseAdapter = ({
         const encodedPath = encodePath(path)
         const response = await fetch(`${storageUrl}/object/${bucket}/${encodedPath}`, {
           headers: {
-            Authorization: `Bearer ${supabaseKey}`,
+            ...getAuthHeaders(),
           },
           method: 'DELETE',
         })
@@ -99,7 +99,7 @@ export const supabaseAdapter = ({
         const response = await fetch(`${storageUrl}/object/${bucket}/${encodedPath}`, {
           body: file.buffer,
           headers: {
-            Authorization: `Bearer ${supabaseKey}`,
+            ...getAuthHeaders(),
             'Content-Length': String(file.buffer.length),
             'Content-Type': file.mimeType,
             'x-upsert': 'true',
@@ -156,7 +156,7 @@ export const supabaseAdapter = ({
           const response = await fetch(`${storageUrl}/object/sign/${bucket}/${encodedPath}`, {
             body: JSON.stringify({ expiresIn: 3600 }),
             headers: {
-              Authorization: `Bearer ${supabaseKey}`,
+              ...getAuthHeaders(),
               'Content-Type': 'application/json',
             },
             method: 'POST',
