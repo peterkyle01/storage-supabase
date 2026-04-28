@@ -55,6 +55,15 @@ export const supabaseAdapter = ({
       handleUpload: async ({ data, file }) => {
         const path = prefix ? `${prefix}/${file.filename}` : file.filename
         const encodedPath = encodePath(path)
+
+        // Validate that supabaseKey looks like a valid service role key
+        if (!supabaseKey || supabaseKey.length < 20) {
+          throw new Error(
+            'Supabase upload failed: Invalid or missing supabaseKey. ' +
+              "Make sure you're using a service_role key (not an anon key) with sufficient permissions.",
+          )
+        }
+
         const response = await fetch(`${storageUrl}/object/${bucket}/${encodedPath}`, {
           body: file.buffer,
           headers: {
@@ -68,7 +77,22 @@ export const supabaseAdapter = ({
 
         if (!response.ok) {
           const errorText = await response.text().catch(() => 'Unable to read response body')
-          throw new Error(`Supabase upload failed: ${response.statusText} - ${errorText}`)
+          let enhancedError = `Supabase upload failed: ${response.statusText}`
+
+          // Provide helpful error messages based on status code
+          if (response.status === 400) {
+            enhancedError +=
+              " (Bad Request) - Check if you're using a service_role key and the bucket name is correct"
+          } else if (response.status === 401 || response.status === 403) {
+            enhancedError +=
+              " (Unauthorized) - Make sure you're using a valid service_role key with storage permissions"
+          }
+
+          if (errorText) {
+            enhancedError += ` - ${errorText}`
+          }
+
+          throw new Error(enhancedError)
         }
 
         return data
