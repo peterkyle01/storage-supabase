@@ -100,8 +100,8 @@ export const supabaseAdapter = ({
           body: file.buffer,
           headers: {
             Authorization: `Bearer ${supabaseKey}`,
-            'Content-Type': file.mimeType,
             'Content-Length': String(file.buffer.length),
+            'Content-Type': file.mimeType,
             'x-upsert': 'true',
           },
           method: 'POST',
