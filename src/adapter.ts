@@ -43,6 +43,16 @@ export const supabaseAdapter = ({
     )
   }
 
+  // Determine which header format to use based on key type
+  const getAuthHeaders = () => {
+    if (supabaseKey?.startsWith('sb_secret_')) {
+      // New secret key format uses apikey header
+      return { apikey: supabaseKey }
+    }
+    // Fallback to Bearer for other formats
+    return { Authorization: `Bearer ${supabaseKey}` }
+  }
+
   return ({ prefix }): GeneratedAdapter => {
     const adapter: GeneratedAdapter = {
       name: 'supabase',
