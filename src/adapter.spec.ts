@@ -9,7 +9,7 @@ describe('supabaseAdapter', () => {
   const config = {
     bucket: 'test-bucket',
     public: true,
-    supabaseKey: 'test-key',
+    supabaseKey: 'sb_secret_test1234567890abcdefghijklmnop',
     supabaseUrl: 'https://xyz.supabase.co',
   }
 
@@ -42,7 +42,7 @@ describe('supabaseAdapter', () => {
       'https://xyz.supabase.co/storage/v1/object/test-bucket/test.jpg',
       expect.objectContaining({
         headers: expect.objectContaining({
-          Authorization: 'Bearer test-key',
+          apikey: 'sb_secret_test1234567890abcdefghijklmnop',
           'Content-Type': 'image/jpeg',
         }),
         method: 'POST',
