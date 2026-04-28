@@ -36,7 +36,7 @@ export const supabaseAdapter = ({
   }
 
   // Validate that we're using the new API key format
-  if (!supabaseKey?.startsWith('sb_secret') && !supabaseKey?.startsWith('sb_publishable')) {
+  if (!supabaseKey?.startsWith('sb_secret_') && !supabaseKey?.startsWith('sb_publishable_')) {
     throw new Error(
       'Invalid Supabase API key. Please use the new Supabase API key format (sb_secret_... or sb_publishable_...) from your Supabase project settings. ' +
         'See: https://supabase.com/docs/guides/api/api-keys',
@@ -64,8 +64,8 @@ export const supabaseAdapter = ({
         const path = prefix ? `${prefix}/${file.filename}` : file.filename
         const encodedPath = encodePath(path)
 
-        // For sb_publishable keys, uploads are not allowed
-        if (supabaseKey?.startsWith('sb_publishable')) {
+        // For sb_publishable_ keys, uploads are not allowed
+        if (supabaseKey?.startsWith('sb_publishable_')) {
           throw new Error(
             'Supabase upload failed: Cannot use publishable key for uploads. ' +
               'Please use a secret key (sb_secret_...) which has write permissions to storage.',
