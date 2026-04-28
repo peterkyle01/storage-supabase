@@ -42,7 +42,7 @@ describe('supabaseAdapter', () => {
       'https://xyz.supabase.co/storage/v1/object/test-bucket/test.jpg',
       expect.objectContaining({
         headers: expect.objectContaining({
-          apikey: 'sb_secret_test1234567890abcdefghijklmnop',
+          Authorization: 'Bearer sb_secret_test1234567890abcdefghijklmnop',
           'Content-Type': 'image/jpeg',
         }),
         method: 'POST',

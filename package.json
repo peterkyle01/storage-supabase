@@ -1,6 +1,6 @@
 {
   "name": "storage-supabase",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "Supabase Storage adapter for Payload CMS",
   "author": {
     "name": "Peter Mwangi",
