@@ -28,12 +28,20 @@ export const supabaseAdapter = ({
 }: Args): Adapter => {
   const storageUrl = `${supabaseUrl}/storage/v1`
 
+  const encodePath = (path: string): string => {
+    return path
+      .split('/')
+      .map((segment) => encodeURIComponent(segment))
+      .join('/')
+  }
+
   return ({ prefix }): GeneratedAdapter => {
     const adapter: GeneratedAdapter = {
       name: 'supabase',
       handleDelete: async ({ filename }) => {
         const path = prefix ? `${prefix}/${filename}` : filename
-        const response = await fetch(`${storageUrl}/object/${bucket}/${path}`, {
+        const encodedPath = encodePath(path)
+        const response = await fetch(`${storageUrl}/object/${bucket}/${encodedPath}`, {
           headers: {
             Authorization: `Bearer ${supabaseKey}`,
           },
@@ -46,24 +54,28 @@ export const supabaseAdapter = ({
       },
       handleUpload: async ({ data, file }) => {
         const path = prefix ? `${prefix}/${file.filename}` : file.filename
-        const response = await fetch(`${storageUrl}/object/${bucket}/${path}`, {
+        const encodedPath = encodePath(path)
+        const response = await fetch(`${storageUrl}/object/${bucket}/${encodedPath}`, {
           body: file.buffer,
           headers: {
             Authorization: `Bearer ${supabaseKey}`,
             'Content-Type': file.mimeType,
+            'Content-Length': String(file.buffer.length),
             'x-upsert': 'true',
           },
           method: 'POST',
         })
 
         if (!response.ok) {
-          throw new Error(`Supabase upload failed: ${response.statusText}`)
+          const errorText = await response.text().catch(() => 'Unable to read response body')
+          throw new Error(`Supabase upload failed: ${response.statusText} - ${errorText}`)
         }
 
         return data
       },
       staticHandler: (async (_req: PayloadRequest, { params: { filename } }) => {
         const path = prefix ? `${prefix}/${filename}` : filename
+        const encodedPath = encodePath(path)
         let url: string
 
         if (isPublic) {
@@ -78,14 +90,14 @@ export const supabaseAdapter = ({
             if (imageOptimization.resize) {
               params.append('resize', imageOptimization.resize)
             }
-            url = `${storageUrl}/render/image/public/${bucket}/${path}${
+            url = `${storageUrl}/render/image/public/${bucket}/${encodedPath}${
               params.toString() ? `?${params.toString()}` : ''
             }`
           } else {
-            url = `${storageUrl}/object/public/${bucket}/${path}`
+            url = `${storageUrl}/object/public/${bucket}/${encodedPath}`
           }
         } else {
-          const response = await fetch(`${storageUrl}/object/sign/${bucket}/${path}`, {
+          const response = await fetch(`${storageUrl}/object/sign/${bucket}/${encodedPath}`, {
             body: JSON.stringify({ expiresIn: 3600 }),
             headers: {
               Authorization: `Bearer ${supabaseKey}`,
@@ -123,7 +135,8 @@ export const supabaseAdapter = ({
     if (isPublic) {
       adapter.generateURL = ({ filename }) => {
         const path = prefix ? `${prefix}/${filename}` : filename
-        return `${storageUrl}/object/public/${bucket}/${path}`
+        const encodedPath = encodePath(path)
+        return `${storageUrl}/object/public/${bucket}/${encodedPath}`
       }
     }
 
