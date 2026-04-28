@@ -35,6 +35,14 @@ export const supabaseAdapter = ({
       .join('/')
   }
 
+  // Validate that we're using the new secret key format
+  if (!supabaseKey?.startsWith('sb_secret_')) {
+    throw new Error(
+      'Invalid Supabase API key. Please use the new secret key format (sb_secret_...) from your Supabase project settings. ' +
+        'Legacy JWT-based service_role keys are no longer supported.',
+    )
+  }
+
   return ({ prefix }): GeneratedAdapter => {
     const adapter: GeneratedAdapter = {
       name: 'supabase',
@@ -43,7 +51,7 @@ export const supabaseAdapter = ({
         const encodedPath = encodePath(path)
         const response = await fetch(`${storageUrl}/object/${bucket}/${encodedPath}`, {
           headers: {
-            Authorization: `Bearer ${supabaseKey}`,
+            apikey: supabaseKey,
           },
           method: 'DELETE',
         })
@@ -56,18 +64,10 @@ export const supabaseAdapter = ({
         const path = prefix ? `${prefix}/${file.filename}` : file.filename
         const encodedPath = encodePath(path)
 
-        // Validate that supabaseKey looks like a valid service role key
-        if (!supabaseKey || supabaseKey.length < 20) {
-          throw new Error(
-            'Supabase upload failed: Invalid or missing supabaseKey. ' +
-              "Make sure you're using a service_role key (not an anon key) with sufficient permissions.",
-          )
-        }
-
         const response = await fetch(`${storageUrl}/object/${bucket}/${encodedPath}`, {
           body: file.buffer,
           headers: {
-            Authorization: `Bearer ${supabaseKey}`,
+            apikey: supabaseKey,
             'Content-Type': file.mimeType,
             'Content-Length': String(file.buffer.length),
             'x-upsert': 'true',
@@ -82,10 +82,10 @@ export const supabaseAdapter = ({
           // Provide helpful error messages based on status code
           if (response.status === 400) {
             enhancedError +=
-              " (Bad Request) - Check if you're using a service_role key and the bucket name is correct"
+              ' (Bad Request) - Check if the bucket name is correct and the API key is valid'
           } else if (response.status === 401 || response.status === 403) {
             enhancedError +=
-              " (Unauthorized) - Make sure you're using a valid service_role key with storage permissions"
+              " (Unauthorized) - Make sure you're using a valid secret key (sb_secret_...) with storage permissions"
           }
 
           if (errorText) {
@@ -124,7 +124,7 @@ export const supabaseAdapter = ({
           const response = await fetch(`${storageUrl}/object/sign/${bucket}/${encodedPath}`, {
             body: JSON.stringify({ expiresIn: 3600 }),
             headers: {
-              Authorization: `Bearer ${supabaseKey}`,
+              apikey: supabaseKey,
               'Content-Type': 'application/json',
             },
             method: 'POST',
