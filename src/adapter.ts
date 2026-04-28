@@ -26,7 +26,21 @@ export const supabaseAdapter = ({
   supabaseKey,
   supabaseUrl,
 }: Args): Adapter => {
-  const storageUrl = `${supabaseUrl}/storage/v1`
+  // Normalize supabaseUrl to project URL format
+  // Support both project URL (https://project.supabase.co) and bucket endpoint (https://project.storage.supabase.co/storage/v1/s3)
+  const normalizedUrl = (() => {
+    if (supabaseUrl.includes('.storage.supabase.co')) {
+      // Extract project ID from bucket endpoint
+      // Format: https://[projectId].storage.supabase.co/...
+      const match = supabaseUrl.match(/https:\/\/([a-z0-9]+)\.storage\.supabase\.co/)
+      if (match && match[1]) {
+        return `https://${match[1]}.supabase.co`
+      }
+    }
+    return supabaseUrl
+  })()
+
+  const storageUrl = `${normalizedUrl}/storage/v1`
 
   const encodePath = (path: string): string => {
     return path
@@ -153,7 +167,7 @@ export const supabaseAdapter = ({
           }
 
           const { signedURL } = await response.json()
-          url = `${supabaseUrl}${signedURL}`
+          url = `${normalizedUrl}${signedURL}`
         }
 
         if (disableProxy) {
